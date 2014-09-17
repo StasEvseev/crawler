@@ -24,32 +24,54 @@ class Yandex(object):
         req = self.create_request(query, deep, region_id)
         self.fetch_data_local()
 
-        #print self._g.doc.select('//div[contains(@class, "serp-block")]').exists()
-        # print self._g.doc.select('//a[contains(@class, "b-link")]').text()
-        serp_items = self._g.doc.select('//div[contains(@class, "' + self._serp_block_class + '")]//div[contains(@class, "' + self._serp_item_class + '")]')
+        def full_xpath(xpaths):
+            first = xpaths[0]
+            return ('/'.join(['//' + first] + xpaths[1:]))
 
-        serp_it = self._g.doc.select('//div[contains(@class, "' + self._serp_block_class + '")]//div[contains(@class, "' + self._serp_item_class + '")]//a[contains(@class, "b-link serp-item__title-link")]')#.select('//a[contains(@class, "b-link serp-item__title-link")]')
+        def factory_xpath(tag, clas, index=None):
+            index = '[' + str(index) + ']' if index else ''
+            return '{0}{1}[contains(@class, "{2}")]'.format(tag, index, clas)
 
-        print serp_items.count()
-        print serp_it.count()
+        for dp in xrange(deep):
+            query_serp_block = factory_xpath('div', self._serp_block_class)
+            query_serp_block_item = factory_xpath('div', self._serp_item_class, dp + 1)
+            query_serp_item_wrap = factory_xpath('div', 'serp-item__wrap')
+            query_serp_title = '/'.join([
+                factory_xpath('h2', 'serp-item__title'),
+                factory_xpath('a', 'b-link serp-item__title-link')])
+            query_serp_snippet = factory_xpath('div', 'serp-item__text')
 
-        for it in serp_it:
-            print it.text()
+            full_p = full_xpath([
+                query_serp_block,
+                query_serp_block_item,
+                query_serp_item_wrap,
+                query_serp_title
+            ])
 
-        #print serp_items.exists()
-        #print serp_items.html()
+            full_p2 = full_xpath([
+                query_serp_block,
+                query_serp_block_item,
+                query_serp_item_wrap,
+                query_serp_snippet
+            ])
 
-        #print serp_items[0].html()
-        #print serp_items[15].select('//a[contains(@class, "b-link serp-item__title-link")]').text()
-        #print serp_items.count()
-        #for item in serp_items:
-        #    print item.select('//a[contains(@class, "b-link serp-item__title-link")]').html()
+            urltitle = self._g.doc.select(full_p)
 
-        #    pass
-            #print item.select('//a[contains(@class, "b-link")]').text()
-            #print item.html()
-        #print serp_block.select('//div[contains(@class, "' + self._serp_item_class + '")]').html()
-        #print list.select('//a[contains(@class, "b-link")]').html()
-        #
-        #for el in list:
-        #    print el.select('//a[contains(@class, "b-link")]').html()
+            snippet = self._g.doc.select(full_p2)
+
+            print urltitle.attr('href')
+            print urltitle.text()
+            print snippet.text()
+
+            print "---------------------------------"
+
+        query_count = full_xpath([
+            factory_xpath('div', 'input__found')
+        ])
+        query_misspell = full_xpath([
+            factory_xpath('div', 'misspell'),
+            factory_xpath('div', 'message'),
+            factory_xpath('div', 'misspell__message')
+        ])
+        print self._g.doc.select(query_count).text()[2:]
+        print self._g.doc.select(query_misspell).text()

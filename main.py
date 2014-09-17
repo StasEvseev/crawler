@@ -19,7 +19,7 @@ def main():
     #     resp = g.submit()
     #     print resp.body
     ya = Yandex()
-    ya.get_serp('test', 0, '213')
+    ya.get_serp('test', 10, '213')
     # print g.xpath_text('//title')
     # print g.response.body
 
